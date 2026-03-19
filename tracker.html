@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Study Tracker • manual entry</title>
+  <title>Study Tracker • Dashboard</title>
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- Chart.js for graphs -->
@@ -28,13 +28,14 @@
       background: #2563eb;
       color: white;
       padding: 20px 40px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      flex-wrap: wrap;
-      gap: 15px;
-      text-align: center;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
     }
 
     .header-center h1 {
@@ -42,6 +43,55 @@
       font-weight: 700;
       letter-spacing: 0.5px;
       margin-bottom: 5px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .user-details {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.1);
+      padding: 8px 15px;
+      border-radius: 40px;
+    }
+
+    .user-avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      border: 2px solid white;
+      object-fit: cover;
+    }
+
+    .user-name {
+      color: white;
+      font-weight: 500;
+    }
+
+    .logout-btn {
+      background: white;
+      color: #2563eb;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .logout-btn:hover {
+      background: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
     .main-container {
@@ -515,6 +565,7 @@
 
     @media (max-width: 768px) {
       header { padding: 20px; }
+      .header-content { flex-direction: column; gap: 15px; }
       .stats-grid { grid-template-columns: 1fr; }
       .charts-grid { grid-template-columns: 1fr; }
       .drive-status-card { flex-direction: column; text-align: center; }
@@ -523,7 +574,17 @@
   </style>
 </head>
 <body>
-  <header><div class="header-center"><h1>Study Tracker</h1></div></header>
+  <header>
+    <div class="header-content">
+      <div></div> <!-- Empty div for spacing -->
+      <div class="header-center">
+        <h1>Study Tracker</h1>
+      </div>
+      <div class="user-info" id="userInfo">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </header>
 
   <div class="main-container">
     <!-- Stats Cards (filled via JS) -->
@@ -612,10 +673,72 @@
     </div>
   </div>
 
-  <footer><p>&copy; 2026 Soham  | All rights reserved | Made with ❤️ by Team Soham</p></footer>
+  <footer><p>&copy; 2026 Soham | All rights reserved | Made with ❤️ by Team Soham</p></footer>
 
   <script>
+    // ============= LOGIN CHECK - MUST BE FIRST =============
+    (function() {
+      // Check if user is logged in
+      const isLoggedIn = localStorage.getItem('isLoggedIn');
+      
+      if (!isLoggedIn || isLoggedIn !== 'true') {
+        // Not logged in, redirect to login page
+        window.location.href = 'login.html';
+        return;
+      }
+    })();
+
+    // ============= REST OF YOUR EXISTING CODE =============
     (function() { if (!localStorage.getItem('driveConnected')) localStorage.setItem('driveConnected', 'true'); })();
+
+    // Display user info in header
+    function displayUserInfo() {
+      const userInfoDiv = document.getElementById('userInfo');
+      if (!userInfoDiv) return;
+      
+      const loginMethod = localStorage.getItem('loginMethod');
+      const userName = localStorage.getItem('userName') || 'User';
+      const userPicture = localStorage.getItem('userPicture');
+      
+      if (loginMethod === 'google' && userPicture) {
+        userInfoDiv.innerHTML = `
+          <div class="user-details">
+            <img src="${userPicture}" alt="Profile" class="user-avatar">
+            <span class="user-name">${userName}</span>
+          </div>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        `;
+      } else {
+        userInfoDiv.innerHTML = `
+          <div class="user-details">
+            <i class="fas fa-user-circle" style="font-size: 30px; color: white;"></i>
+            <span class="user-name">${userName}</span>
+          </div>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        `;
+      }
+    }
+
+    // Logout function
+    function logout() {
+      // Clear all login-related data
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginMethod');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userPicture');
+      localStorage.removeItem('googleUserId');
+      localStorage.removeItem('googleToken');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('userId');
+      
+      // Redirect to login page
+      window.location.href = 'login.html';
+    }
 
     // ---------- PAPER 2 TOPICS (General Studies I) ----------
     const paper2Topics = [
@@ -833,6 +956,9 @@
 
     // initialize charts
     window.addEventListener('load', function() {
+      // Display user info
+      displayUserInfo();
+      
       document.getElementById('date').value = new Date().toISOString().split('T')[0];
       
       // Progress Bar Chart
