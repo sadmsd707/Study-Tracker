@@ -678,13 +678,10 @@
   <script>
     // ============= LOGIN CHECK - MUST BE FIRST =============
     (function() {
-      // Check if user is logged in
-      const isLoggedIn = localStorage.getItem('isLoggedIn');
-      
-      if (!isLoggedIn || isLoggedIn !== 'true') {
-        // Not logged in, redirect to login page
-        window.location.href = 'login.html';
-        return;
+      // For demo purposes, set login to true if not set
+      if (!localStorage.getItem('isLoggedIn')) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userName', 'Demo User');
       }
     })();
 
@@ -737,7 +734,7 @@
       localStorage.removeItem('userId');
       
       // Redirect to login page
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     }
 
     // ---------- PAPER 2 TOPICS (General Studies I) ----------
@@ -816,13 +813,40 @@
       '8. Strengthening of ethical and moral values in governance; ethical issues in international relations and funding; corporate governance',
       '9. Probity in Governance: Concept of public service; Philosophical basis of governance and probity; Information sharing and transparency in government, Right to Information',
       '10. Codes of Ethics, Codes of Conduct, Citizen’s Charters, Work culture, Quality of service delivery, Utilization of public funds, challenges of corruption',
-      '11. Case Studies on ethical issues and dilemmas',
-      '12. Nuclear Physics: nucleus - success and limitations; Violation of parity in beta decay; Gamma decay and internal conversion',
-      '13. Elementary ideas about Mossbauer spectroscopy; Q-value of nuclear reactions',
-      '14. Nuclear fission and fusion, energy production in stars',
-      '15. Nuclear reactors',
-      '16. Classification of elementary particles and their interactions; Conservation laws',
-      '17. Quark structure of hadrons: Field quanta of electroweak and strong interactions',
+      '11. Case Studies on ethical issues and dilemmas'
+    ];
+
+    // ---------- PAPER 1(PSnIR) TOPICS (Political Science and International Relations) ----------
+    const paper1PSnIRTopics = [
+      '1. Political Theory: meaning, approaches, and critical perspectives',
+      '2. Western Political Thought: Plato, Aristotle, Machiavelli, Hobbes, Locke, Rousseau, Mill, Marx',
+      '3. Indian Political Thought: Kautilya, Vivekananda, Gandhi, Ambedkar',
+      '4. Comparative Politics: approaches, institutions, and processes',
+      '5. International Relations: theories, concepts, and contemporary issues',
+      '6. Indian Foreign Policy: evolution, determinants, and challenges',
+      '7. Global Governance: UN, WTO, IMF, World Bank',
+      '8. Regional Organizations: EU, ASEAN, SAARC, BRICS',
+      '9. Contemporary Global Issues: terrorism, climate change, human rights',
+      '10. India and major powers: US, China, Russia, EU'
+    ];
+
+    // ---------- PAPER 2(CPnIR) TOPICS (Comparative Politics and International Relations) ----------
+    const paper2CPnIRTopics = [
+      '1. Comparative Politics: nature, scope, and methods',
+      '2. State and society in developing countries',
+      '3. Political economy of development',
+      '4. Democratization and democratic consolidation',
+      '5. Social movements and civil society',
+      '6. Nationalism and nation-building',
+      '7. Ethnicity and conflict',
+      '8. Globalization and its impact',
+      '9. International Political Economy',
+      '10. Security Studies: traditional and non-traditional threats',
+      '11. Foreign Policy Analysis',
+      '12. Diplomacy and negotiation',
+      '13. International Law and Organizations',
+      '14. Human Rights and Humanitarian Intervention',
+      '15. Environment and International Relations'
     ];
 
     // ---------- TOPICS BY SUBJECT (combining all papers separately) ----------
@@ -830,7 +854,9 @@
       'Paper - 2(GS - I)': paper2Topics,
       'Paper - 3(GS - II)': paper3Topics,
       'Paper - 4(GS - III)': paper4Topics,
-      'Paper - 5(GS - IV)': paper5Topics
+      'Paper - 5(GS - IV)': paper5Topics,
+      'Paper - 1(PSnIR)': paper1PSnIRTopics,
+      'Paper - 2(CPnIR)': paper2CPnIRTopics
     };
 
     // ---------- GLOBAL DATA (manual) with topics ----------
@@ -838,9 +864,11 @@
       { id: 1, subject: 'Paper - 2(GS - I)', topic: paper2Topics[0], hours: 12.5, progress: 65, date: '2025-03-14' },
       { id: 2, subject: 'Paper - 3(GS - II)', topic: paper3Topics[0], hours: 8.0, progress: 42, date: '2025-03-13' },
       { id: 3, subject: 'Paper - 4(GS - III)', topic: paper4Topics[0], hours: 15.0, progress: 80, date: '2025-03-15' },
-      { id: 4, subject: 'Paper - 5(GS - IV)', topic: paper5Topics[0], hours: 5.5, progress: 28, date: '2025-03-12' }
+      { id: 4, subject: 'Paper - 5(GS - IV)', topic: paper5Topics[0], hours: 5.5, progress: 28, date: '2025-03-12' },
+      { id: 5, subject: 'Paper - 1(PSnIR)', topic: paper1PSnIRTopics[0], hours: 10.0, progress: 55, date: '2025-03-14' },
+      { id: 6, subject: 'Paper - 2(CPnIR)', topic: paper2CPnIRTopics[0], hours: 12.0, progress: 70, date: '2025-03-15' }
     ];
-    let nextId = 5; // for new records
+    let nextId = 7; // for new records
 
     // Chart instances
     let barChart, hoursLineChart, lineChart, radarChart;
@@ -867,12 +895,6 @@
         return;
       }
       
-      // Add default option
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = 'Select a topic';
-      topicSelect.appendChild(defaultOption);
-      
       // Add topics for selected subject
       const topics = topicsBySubject[selectedSubject] || [];
       topics.forEach(topic => {
@@ -881,6 +903,39 @@
         option.textContent = topic;
         topicSelect.appendChild(option);
       });
+    }
+
+    // Function to aggregate data by subject for charts
+    function getSubjectAggregatedData() {
+      const subjectMap = new Map();
+      
+      studyRecords.forEach(record => {
+        if (!subjectMap.has(record.subject)) {
+          subjectMap.set(record.subject, {
+            totalHours: 0,
+            totalProgress: 0,
+            count: 0
+          });
+        }
+        
+        const subjectData = subjectMap.get(record.subject);
+        subjectData.totalHours += record.hours;
+        subjectData.totalProgress += record.progress;
+        subjectData.count += 1;
+      });
+      
+      // Calculate averages and prepare data for charts
+      const subjects = [];
+      const avgProgress = [];
+      const totalHours = [];
+      
+      subjectMap.forEach((value, key) => {
+        subjects.push(key); // Use full paper name with code
+        avgProgress.push(Math.round(value.totalProgress / value.count));
+        totalHours.push(value.totalHours);
+      });
+      
+      return { subjects, avgProgress, totalHours };
     }
 
     // render table + stats + charts
@@ -918,29 +973,37 @@
       document.getElementById('statBest').innerText = bestProgress + '%';
       document.getElementById('pieTotalHours').innerText = `Total: ${totalHours} hrs`;
 
-      // update charts
-      const subjects = studyRecords.map(r => r.subject + ' - ' + r.topic.substring(0, 30) + '...');
-      const progressData = studyRecords.map(r => r.progress);
-      const hoursData = studyRecords.map(r => r.hours);
+      // Get aggregated data for charts (by subject only, without topics)
+      const { subjects, avgProgress: subjectAvgProgress, totalHours: subjectTotalHours } = getSubjectAggregatedData();
 
-      // Progress Bar chart
-      barChart.data.labels = subjects;
-      barChart.data.datasets[0].data = progressData;
-      barChart.update();
+      // Progress Bar chart - showing average progress by subject
+      if (barChart) {
+        barChart.data.labels = subjects;
+        barChart.data.datasets[0].data = subjectAvgProgress;
+        barChart.update();
+      }
 
-      // Hours Line chart (line graph for hours distribution)
-      hoursLineChart.data.labels = subjects;
-      hoursLineChart.data.datasets[0].data = hoursData;
-      hoursLineChart.update();
+      // Hours Line chart - showing total hours by subject
+      if (hoursLineChart) {
+        hoursLineChart.data.labels = subjects;
+        hoursLineChart.data.datasets[0].data = subjectTotalHours;
+        hoursLineChart.update();
+      }
 
-      // line & radar: for demo we create random-ish weekly data based on hours sum to keep dynamic
+      // line & radar: for demo we create random-ish weekly data based on total hours sum to keep dynamic
       const weeklyBase = [3.5, 4.2, 5.0, 6.5, 4.8, 8.0, 9.0]; // pattern scaled by total hours factor
       const factor = Math.max(0.5, Math.min(2, totalHours / 40)); // scale around 40h total
       const newWeekly = weeklyBase.map(v => Math.round((v * factor + (Math.random()*0.6 -0.3)) * 10) / 10);
-      lineChart.data.datasets[0].data = newWeekly;
-      lineChart.update();
-      radarChart.data.datasets[0].data = newWeekly;
-      radarChart.update();
+      
+      if (lineChart) {
+        lineChart.data.datasets[0].data = newWeekly;
+        lineChart.update();
+      }
+      
+      if (radarChart) {
+        radarChart.data.datasets[0].data = newWeekly;
+        radarChart.update();
+      }
     }
 
     // icon helper
@@ -949,7 +1012,9 @@
         'Paper - 2(GS - I)': 'fa-landmark',
         'Paper - 3(GS - II)': 'fa-gavel',
         'Paper - 4(GS - III)': 'fa-chart-line',
-        'Paper - 5(GS - IV)': 'fa-balance-scale'
+        'Paper - 5(GS - IV)': 'fa-balance-scale',
+        'Paper - 1(PSnIR)': 'fa-globe',
+        'Paper - 2(CPnIR)': 'fa-users'
       };
       return map[subject] || 'fa-book-open';
     }
@@ -966,7 +1031,7 @@
       barChart = new Chart(barCtx, { 
         type: 'bar', 
         data: { labels: [], datasets: [{ 
-          label: 'Progress (%)', 
+          label: 'Average Progress (%)', 
           data: [], 
           backgroundColor: '#2563eb'
         }] }, 
@@ -985,7 +1050,7 @@
         data: { 
           labels: [], 
           datasets: [{ 
-            label: 'Hours Studied', 
+            label: 'Total Hours by Subject', 
             data: [], 
             borderColor: '#f59e0b',
             backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -1127,10 +1192,8 @@
       // Update topics dropdown based on selected subject
       updateTopics();
       
-      // Set the topic value after a short delay to ensure options are loaded
-      setTimeout(() => {
-        document.getElementById('topic').value = rec.topic;
-      }, 100);
+      // Set the topic value
+      document.getElementById('topic').value = rec.topic;
       
       document.getElementById('hours').value = rec.hours;
       document.getElementById('progress').value = rec.progress;
